@@ -1,0 +1,23 @@
+[project]
+name = "cjudge"
+version = "0.0.1"
+authors = [
+  { name="Jorge Hdez", email="jorgehdezplp@proton.me" },
+]
+description = "CLI utility for different online judges."
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = ["pylatex", "bs4", "requests"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+]
+
+[project.urls]
+Homepage = "https://github.com/NotTete/cjudge"
+
+[project.scripts]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
