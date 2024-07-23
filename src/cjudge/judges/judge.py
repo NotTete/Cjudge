@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 import shutil 
 
-from .config import Config
+from ..config import Config
 
 class Judge(ABC):
     """

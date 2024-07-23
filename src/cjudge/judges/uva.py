@@ -4,7 +4,7 @@ import requests
 import json
 
 from .judge import Judge
-from .error import InvalidProblemException
+from ..error import InvalidProblemException
 
 class UvaJudge(Judge):
 
@@ -49,9 +49,8 @@ class UvaJudge(Judge):
         # Problem number must be bigger than 100
         if len(problem) <= 2:
             raise InvalidProblemException(self.name, problem)
-
         folder = problem[:-2]
-        self.pdf_url = f"https://onlinejudge.org/external/{folder}/{problem}.pdf"
+        self.pdf_url = f"https://onlinejudge.org/external/{folder}/p{problem}.pdf"
         self.problem = problem
 
     def create_statement(self, path: Path): 
@@ -65,22 +64,13 @@ class UvaJudge(Judge):
                 file.write(chunk)
     
     def create_samples(self, path: Path, force: bool = False):
-        
-        parts = []
-        def eliminate_header(text, cm, tm, font_dict, font_size):
-            """ Eliminates the header from the pdf """
-            if 40.2 > tm[5] or tm[5] > 40.4:
-                parts.append(text)
-
         # Open problem pdf
         reader = PdfReader(Path(path.parent, f"{self.problem}.pdf"))
 
         # Extract text from every page
         text = ""
         for page in reader.pages:
-            parts.clear()
-            page.extract_text(visitor_text=eliminate_header)
-            text += "".join(parts)
+            text += page.extract_text()
             text += "\n"
 
         # Search for input and output header

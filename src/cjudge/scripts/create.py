@@ -3,8 +3,8 @@ from pathlib import Path
 from shutil import copytree, rmtree
 
 import cjudge
-from .problem import Problem
-from .error import *
+from ..problem import Problem
+from ..error import *
 
 import itertools
 import threading
@@ -84,5 +84,3 @@ def cli_create():
         raise(e)
     else:
         status = 1
-
-

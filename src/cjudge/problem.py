@@ -2,12 +2,19 @@ from pathlib import Path
 import shutil
 
 from .error import *
-from .kattis import KattisJudge
-from .uva import UvaJudge
-from .aceptaelreto import AerJudge
+from .judges.kattis import KattisJudge
+from .judges.uva import UvaJudge
+from .judges.aceptaelreto import AerJudge
 
 class Problem:
-    def __init__(self, judge, problem):
+    def __init__(self, judge: str, problem: str):
+        """
+        Create a problem from a judge
+
+        Args:
+            judge (str): Selected judge
+            problem (str): Selected problem
+        """
         self.problem = problem
 
         # Check if the judge and problem is valid
@@ -20,7 +27,16 @@ class Problem:
         else:
             raise InvalidJudgeException(judge)
 
-    def create(self, path: Path = None, force: bool = False):
+    def create(self, path, force: bool = False):
+        """
+        Given a path create a problem folder in the destination
+
+        Args:
+            path (Path): Destination folder. Defaults to None.
+            force (bool, optional): Force to create the folder. Defaults to False.
+
+        """
+
         try:
             path.mkdir(parents=True)
         except FileExistsError as e:

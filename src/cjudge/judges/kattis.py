@@ -4,7 +4,7 @@ import requests
 import kattispdf
 import shutil
 
-from .error import InvalidProblemException
+from ..error import InvalidProblemException
 from .judge import Judge
 
 class KattisJudge(Judge):
