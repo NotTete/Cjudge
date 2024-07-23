@@ -1,5 +1,3 @@
-from pathlib import Path
-
 class InvalidJudgeException(Exception):
     """
     Exception raised when a judge is invalid

@@ -1,7 +1,8 @@
-import abc
 from abc import ABC, abstractmethod
 from pathlib import Path
 import shutil 
+
+from .config import Config
 
 class Judge(ABC):
     """
@@ -36,22 +37,9 @@ class Judge(ABC):
         Args:
             path (Path): destination path
         """   
+
+        Config.copy_template(path)
         
-        src_path = Path(Path.home(), ".cjudge", "template.cpp")
-
-        # Check if the config file exists
-        if(not src_path.exists()):
-            if(src_path.parent.exists()):
-                # Clear and create path for config
-                shutil.rmtree(src_path.parent)
-
-            # Move config content to the new folder
-            old_path = Path(Path(__file__).parent, "config")
-            shutil.copytree(old_path, src_path.parent)
-
-        # Copy template
-        shutil.copyfile(src_path, path)
-
     def create_metadata(self, path: Path):
         """
         Create a metadata file

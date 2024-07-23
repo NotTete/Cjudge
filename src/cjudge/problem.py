@@ -1,4 +1,6 @@
 from pathlib import Path
+import shutil
+
 from .error import *
 from .kattis import KattisJudge
 from .uva import UvaJudge
@@ -18,12 +20,12 @@ class Problem:
         else:
             raise InvalidJudgeException(judge)
 
-    def create(self, path: Path = None):
-        # Check if the path is valid
-        if(path == None):
-            path = Path(".", self.problem)
-
-        path.mkdir(parents=True)
+    def create(self, path: Path = None, force: bool = False):
+        try:
+            path.mkdir(parents=True)
+        except FileExistsError as e:
+            if(not force):
+                raise e
 
         # Download and create files
         self.judge.create_statement(Path(path, f"{self.problem}.pdf"))

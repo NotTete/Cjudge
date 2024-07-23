@@ -2,7 +2,7 @@ from pathlib import Path
 import requests
 from bs4 import BeautifulSoup
 
-from .error import *
+from .error import InvalidProblemException
 from .judge import Judge
 
 class AerJudge(Judge):    
@@ -19,7 +19,7 @@ class AerJudge(Judge):
         request = requests.get(self.pdf_url)
         error_code = request.status_code
         if(error_code != 200):
-            InvalidProblemException(self.name, self.problem)
+            raise InvalidProblemException(self.name, self.problem)
 
     def create_statement(self, path: Path):
         request = requests.get(self.pdf_url, stream=True)

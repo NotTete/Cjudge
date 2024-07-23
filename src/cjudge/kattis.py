@@ -4,7 +4,7 @@ import kattispdf
 import shutil
 from zipfile import ZipFile 
 
-from .error import *
+from .error import InvalidProblemException
 from .judge import Judge
 
 def _problem_url(problem: str):
@@ -22,7 +22,7 @@ class KattisJudge(Judge):
 
         error_code = request.status_code
         if(error_code != 200):
-            InvalidProblemException(self.name, self.problem)
+            raise InvalidProblemException(self.name, self.problem)
 
     
 

@@ -1,8 +1,10 @@
-from .judge import Judge
 import requests
 from pathlib import Path
 import json
 from pypdf import PdfReader
+
+from .judge import Judge
+from .error import InvalidProblemException
 
 
 class UvaJudge(Judge):
@@ -11,10 +13,14 @@ class UvaJudge(Judge):
     
     def __init__(self, problem):
         self.problem = problem
-
         folder = problem[:-2]
         
         self.pdf_url = f"{self.url}/external/{folder}/{problem}.pdf"
+        request = requests.get(self.pdf_url)
+        error_code = request.status_code
+        if(error_code != 200):
+            raise InvalidProblemException(self.name, self.problem)
+            
 
         request = requests.get(f"https://uhunt.onlinejudge.org/api/p/num/{self.problem}")
         request.raise_for_status()
@@ -22,12 +28,6 @@ class UvaJudge(Judge):
 
         self.problem_id = data["pid"]
         self.url = f"{self.url}/index.php?option=com_onlinejudge&Itemid=8&page=show_problem&problem={self.problem_id}"
-
-        request = requests.get(self.pdf_url)
-        error_code = request.status_code
-        if(error_code != 200):
-            InvalidProblemException(self.name, self.problem)
-
 
     def create_statement(self, path: Path): 
         request = requests.get(self.pdf_url, stream=True)
@@ -43,7 +43,7 @@ class UvaJudge(Judge):
         parts = []
 
         def visitor_body(text, cm, tm, font_dict, font_size):
-            if tm[5] != 40.329:
+            if 40.2 > tm[5] or tm[5] > 40.4:
                 parts.append(text)
 
         reader = PdfReader(Path(path.parent, f"{self.problem}.pdf"))
