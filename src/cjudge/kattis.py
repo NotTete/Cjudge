@@ -1,46 +1,72 @@
 from pathlib import Path
+from zipfile import ZipFile 
 import requests
 import kattispdf
 import shutil
-from zipfile import ZipFile 
 
 from .error import InvalidProblemException
 from .judge import Judge
 
-def _problem_url(problem: str):
-    """Given a problem id returns its url"""
-    return f"{KattisJudge.url}/problems/{problem}"
+class KattisJudge(Judge):
 
-class KattisJudge(Judge):    
-    url = "https://open.kattis.com"
-    name = "kattis"
-    
-    def __init__(self, problem):
-        self.problem = problem
-        self.url = f"{self.url}/problems/{problem}"
+    @property
+    def problem(self):
+        return self._problem
+
+    @property
+    def url(self):
+        return f"https://open.kattis.com/problems/{self._problem}"
+
+    @problem.setter
+    def problem(self, problem: str):
+        """
+        Set the problem number after validating it
+
+        Args:
+            problem (str): Problem number
+        """
+
+        self._problem = problem
+
+        # We request the problem page to validate it is a valid problem
         request = requests.get(self.url)
-
         error_code = request.status_code
         if(error_code != 200):
-            raise InvalidProblemException(self.name, self.problem)
+            raise InvalidProblemException(self.name, problem)
+        
 
-    
+    @property
+    def name(self):
+        return "kattis"
+
+    def __init__(self, problem: str):
+        self.problem = problem
 
     def create_statement(self, path: Path):
         kattispdf.generate_pdf(self.problem, path)
     
-    def create_samples(self, path):
-        # Request files
+    def create_samples(self, path: Path, force: bool = False):
+        # Request sample
         samples_url = f"{self.url}/file/statement/samples.zip"
         request = requests.get(samples_url, stream=True)
         
+        # Create folder
+        try:
+            path.mkdir()
+        except FileExistsError as e:
+            if(not force):
+                raise e
+
         if(request.status_code == 404):
-            # No samples
+            # If no sample, we create an empty sample
+            with open(Path(path, "1.in"), "w") as file:
+                pass
+            with open(Path(path, "1.out"), "w") as file:
+                pass
+            
             return
 
-        # Create folder
-        path.mkdir()
-
+        # Download samples
         zip_path = Path(path, "samples.zip")
         with open(zip_path, "wb") as file:
             for chunk in request.iter_content(1024):
@@ -53,16 +79,13 @@ class KattisJudge(Judge):
         # Clean up download
         zip_path.unlink()
 
-        # Remove dir if no samples
+        # If no sample, we create an empty sample
         if(len(list(path.iterdir())) == 0):
-            shutil.rmtree(path)
+            with open(Path(path, "1.in"), "w") as file:
+                pass
+            with open(Path(path, "1.out"), "w") as file:
+                pass
 
         # Change .ans for .out
         for file in path.glob("*.ans"):
             file.rename(file.with_suffix(".out"))
-
-
-
-
-
-
