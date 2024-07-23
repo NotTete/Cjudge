@@ -7,7 +7,7 @@ authors = [
 description = "CLI utility for different online judges."
 readme = "README.md"
 requires-python = ">=3.8"
-dependencies = ["pylatex", "bs4", "requests"]
+dependencies = ["kattispdf", "requests"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
@@ -17,6 +17,7 @@ classifiers = [
 Homepage = "https://github.com/NotTete/cjudge"
 
 [project.scripts]
+cjudge-create = "cjudge:cli_create"
 
 [build-system]
 requires = ["hatchling"]
