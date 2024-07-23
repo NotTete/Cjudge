@@ -6,7 +6,7 @@ class InvalidJudgeException(Exception):
         judge (str): selected judge
     """
 
-    def __init__(self, judge):
+    def __init__(self, judge: str):
         self.judge = judge
         super().__init__(f"'{judge}' is an invalid judge")
 
@@ -19,7 +19,7 @@ class InvalidProblemException(Exception):
         judge (str): selected judge
     """
 
-    def __init__(self, judge, problem):
+    def __init__(self, judge: str, problem: str):
         self.judge = judge
         self.problem = problem
         super().__init__(f"Problem '{problem}' from '{judge}' doesn't exist")

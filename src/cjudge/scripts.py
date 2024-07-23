@@ -79,7 +79,7 @@ def cli_create():
         print(f"\033[1m\033[91m[ERROR]\033[0m '{e.filename}' folder already exists")        
     except Exception as e:
         status = -4
-        rmtree(path)
+        rmtree(path, ignore_errors=True)
         print(f"\033[1m\033[91m[ERROR]\033[0m an unexpected error has ocurred")
         raise(e)
     else:

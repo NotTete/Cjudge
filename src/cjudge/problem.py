@@ -29,6 +29,6 @@ class Problem:
 
         # Download and create files
         self.judge.create_statement(Path(path, f"{self.problem}.pdf"))
-        self.judge.create_samples(Path(path, "samples"))
+        self.judge.create_samples(Path(path, "samples"), force)
         self.judge.create_template(Path(path, "main.cpp"))
         self.judge.create_metadata(Path(path, ".meta"))

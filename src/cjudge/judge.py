@@ -9,6 +9,24 @@ class Judge(ABC):
         Abstract Class that represent a judge
     """
 
+    @property
+    @abstractmethod
+    def name(self):
+        """Judge name"""
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def url(self):
+        """Problem url"""
+        raise NotImplementedError  
+
+    @property
+    @abstractmethod
+    def problem(self):
+        """Problem id"""
+        raise NotImplementedError  
+
     @abstractmethod
     def __init__(problem: str):
         """
@@ -20,13 +38,25 @@ class Judge(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def create_statement(problem: str, path: Path):
+    def create_statement(self, problem: str, path: Path):
         """
         Download problem statement in a path
 
         Args:
             problem (str): problem id
             path (Path): download destination path
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def create_samples(self, problem: str, path: Path, force: bool = False):
+        """
+        Create problem samples in a desired folder
+
+        Args:
+            problem (str): problem id
+            path (Path): download destination path
+            force(bool): forces to continue even if the directory exists
         """
         raise NotImplementedError
 
