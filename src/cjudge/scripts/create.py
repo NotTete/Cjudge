@@ -1,29 +1,15 @@
 import argparse
 from pathlib import Path
+from requests import exceptions
 from shutil import copytree, rmtree
 
-import cjudge
-from ..problem import Problem
+from ..judges.judge import Judge
+from ..problem import get_judge
 from ..error import *
-
-import itertools
-import threading
-import time
-
-status = 0
-#here is the animation
-def animate(text):
-    for c in itertools.cycle(['.  ', '.. ', '...']):
-        if status != 0:
-            break
-        print(f'{text}{c}', end="\r")
-        time.sleep(0.25)
-    if(status == 1):
-        print('Done!                 ')
+from ..terminal_utils import *
 
 
 def cli_create():
-    global status
     parser = argparse.ArgumentParser(
         prog="cjudge-create",
         description="create a problem from an online judge",
@@ -32,7 +18,7 @@ def cli_create():
     parser.add_argument(
         "judge",
         metavar="judge",
-        help="online judge",
+        help="online judge from 'uva', 'aer', 'kattis' and 'none'",
     )
 
     parser.add_argument(
@@ -55,32 +41,91 @@ def cli_create():
         default=False, 
         action='store_true',
         dest="force",
-        help="if the destination folder already exists it deletes it"
+        help="force the creation of the problem even if the folder exists"
     )
 
+    parser.add_argument(
+        '--nostatement',  
+        default=True, 
+        action='store_false',
+        dest="statement",
+        help="Doesn't create the problem statement"
+    )
+
+    parser.add_argument(
+        '--nosample',  
+        default=True, 
+        action='store_false',
+        dest="sample",
+        help="Create a sample folder with empty sample cases"
+    )
+
+    # Get cli arguments
     args = parser.parse_args()
-    path = args.path
-    # Check if the path is valid
+    
+    path: Path = args.path
+    force: bool = args.force
+    sample: bool = args.sample
+    statement: bool = args.statement
+    problem: str = args.problem
+    judge_name: str = args.judge
+
+    # Default path
     if(path == None):
-        path = Path(".", args.problem)
-    t = threading.Thread(target=animate, args=("Creating problem",))
-    t.start()
+        path = Path(Path(".", args.problem))
+
+    # Start the creation of the problem
+    loader = Loader(
+        "Creating folder...", 
+        f"Problem created sucessfully {check}",
+        color=Color("#00ffff")
+    )
+    loader.start()
+
+    error_msg = None
+    remove_dir = False
+
+
     try:
-        problem = Problem(args.judge, args.problem)
-        problem.create(path, args.force)
-    except InvalidProblemException as e:
-        status = -1
-        print(f"\033[1m\033[91m[ERROR]\033[0m '{e.problem}' isn't a valid problem from {e.judge}")
-    except InvalidJudgeException as e:
-        status = -2
-        print(f"\033[1m\033[91m[ERROR]\033[0m '{e.judge}' isn't a valid judge. Valid judges are: aer, kattis, uva")
-    except FileExistsError as e:
-        status = -3
-        print(f"\033[1m\033[91m[ERROR]\033[0m '{e.filename}' folder already exists")        
+        # Get problem
+        judge = get_judge(judge_name, problem, path)
+
+        # Check if the judge was correct and warn the user
+        if(judge.name == "none" and judge_name != "none"):
+            loader.send_warning("Invalid judge creating an empty problem")
+
+        # Create the problem folder
+        path.mkdir(parents=True, exist_ok=force)
+        remove_dir = True
+
+        # Download problem statement
+        if(statement):
+            loader.change_description("Downloading statement...")
+            judge.create_statement()
+
+        # Download problem samples
+        if(sample):
+            loader.change_description("Downloading samples...")
+        judge.create_samples(force, sample)
+
+        # Create extra files
+        loader.change_description("Creating extra files...")
+        judge.create_template()
+        judge.create_metadata()
+
+    # Error handling
+    except FileExistsError:
+        error_msg = "Folder already exists"
+    except (exceptions.HTTPError, InvalidProblemException):
+        error_msg = f"Problem '{problem}' isn't a {judge_name} problem"
+    except (exceptions.ConnectTimeout, exceptions.ConnectionError):
+        error_msg = f"Couldn't connect to {judge_name}"
     except Exception as e:
-        status = -4
-        rmtree(path, ignore_errors=True)
-        print(f"\033[1m\033[91m[ERROR]\033[0m an unexpected error has ocurred")
-        raise(e)
-    else:
-        status = 1
+        error_msg = str(e)
+    else:    
+        remove_dir = False
+
+    # Clean up
+    if(remove_dir):
+        rmtree(path)
+    loader.stop(error_msg)

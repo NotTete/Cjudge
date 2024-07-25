@@ -8,63 +8,46 @@ from ..error import InvalidProblemException
 from .judge import Judge
 
 class KattisJudge(Judge):
-
-    @property
-    def problem(self):
-        return self._problem
-
     @property
     def url(self):
         return f"https://open.kattis.com/problems/{self._problem}"
-
-    @problem.setter
-    def problem(self, problem: str):
-        """
-        Set the problem number after validating it
-
-        Args:
-            problem (str): Problem number
-        """
-
-        self._problem = problem
-
-        # We request the problem page to validate it is a valid problem
-        request = requests.get(self.url)
-        error_code = request.status_code
-        if(error_code != 200):
-            raise InvalidProblemException(self.name, problem)
-        
 
     @property
     def name(self):
         return "kattis"
 
-    def __init__(self, problem: str):
+    @property
+    def fullname(self):
+        return "Kattis"
+
+    def __init__(self, problem: str, path: Path):
+        self.path = path
         self.problem = problem
 
-    def create_statement(self, path: Path):
+    def create_statement(self):
+        path = Path(self.path, f"{self.problem}.pdf")
         kattispdf.generate_pdf(self.problem, path)
     
-    def create_samples(self, path: Path, force: bool = False):
+    def create_samples(self, force: bool = False, create_sample: bool = True):
+        
+        # Check if the user want to create empty samples
+        if(not create_sample):
+            self.create_samples_empty(force)
+            return
+
         # Request sample
         samples_url = f"{self.url}/file/statement/samples.zip"
         request = requests.get(samples_url, stream=True)
-        
-        # Create folder
-        try:
-            path.mkdir()
-        except FileExistsError as e:
-            if(not force):
-                raise e
 
+        # If problem not found create empty samples
         if(request.status_code == 404):
-            # If no sample, we create an empty sample
-            with open(Path(path, "1.in"), "w") as file:
-                pass
-            with open(Path(path, "1.out"), "w") as file:
-                pass
-            
+            self.create_samples_empty(force)
             return
+        request.raise_for_status()
+
+        # Create folder
+        path = Path(self.path, "samples")
+        path.mkdir(exist_ok=force)
 
         # Download samples
         zip_path = Path(path, "samples.zip")

@@ -8,34 +8,6 @@ from ..error import InvalidProblemException
 
 class UvaJudge(Judge):
 
-    @property
-    def problem(self):
-        return self._problem
-
-    @problem.setter
-    def problem(self, problem: str):
-        """
-        Set the problem number after validating it
-
-        Args:
-            problem (str): Problem number
-        """
-
-        # We request the pdf of the problem to validate it is a valid problem
-        request = requests.get(self.pdf_url)
-        error_code = request.status_code
-
-        # If the requests isn't sucessful we raise an error
-        if(error_code != 200):
-            raise InvalidProblemException(self.name, problem)
-        self._problem = problem
-
-        # We also set problem_id
-        request = requests.get(f"https://uhunt.onlinejudge.org/api/p/num/{self._problem}")
-        request.raise_for_status()
-        data = json.loads(request.text)
-
-        self._problem_id = data["pid"]
 
     @property
     def url(self):
@@ -45,27 +17,49 @@ class UvaJudge(Judge):
     def name(self):
         return "uva"
 
-    def __init__(self, problem: str):
+    @property
+    def fullname(self):
+        return "UvaJudge"
+
+    def __init__(self, problem: str, path: Path):
+        self.path = path
+        self.problem = problem
+
         # Problem number must be bigger than 100
         if len(problem) <= 2:
             raise InvalidProblemException(self.name, problem)
-        folder = problem[:-2]
-        self.pdf_url = f"https://onlinejudge.org/external/{folder}/p{problem}.pdf"
-        self.problem = problem
 
-    def create_statement(self, path: Path): 
+        # Get problem_id for problem url
+        request = requests.get(f"https://uhunt.onlinejudge.org/api/p/num/{self._problem}")
+        request.raise_for_status()
+        data = json.loads(request.text)
+        self._problem_id = data.get("pid")
+
+        if(self._problem_id == None):
+            raise InvalidProblemException(self.name, problem)
+
+    def create_statement(self): 
+        # Get pdf url
+        folder = self.problem[:-2]
+        pdf_url = f"https://onlinejudge.org/external/{folder}/p{self.problem}.pdf"
 
         # Download and save pdf directly from uva
-        request = requests.get(self.pdf_url, stream=True)
+        request = requests.get(pdf_url, stream=True)
         request.raise_for_status()
 
+        path = Path(self.path, f"{self.problem}.pdf")
         with open(path, "wb") as file:
             for chunk in request.iter_content(1024):
                 file.write(chunk)
     
-    def create_samples(self, path: Path, force: bool = False):
+    def create_samples(self, force: bool = False, create_sample: bool = True):
+        # Check if the user want to create empty samples
+        if(not create_sample):
+            self.create_samples_empty(force)
+            return
+        
         # Open problem pdf
-        reader = PdfReader(Path(path.parent, f"{self.problem}.pdf"))
+        reader = PdfReader(Path(self.path, f"{self.problem}.pdf"))
 
         # Extract text from every page
         text = ""
@@ -77,9 +71,11 @@ class UvaJudge(Judge):
         input_index = text.find("Sample Input\n")
         output_index = text[input_index:].find("Sample Output\n")
 
-        # Skip if not found
+        # If no sample, we create an empty sample
         if(input_index == -1 or output_index == -1):
+            self.create_samples_empty(force)
             return
+
         output_index += input_index
 
         # Obtain sample input and output  
@@ -87,15 +83,18 @@ class UvaJudge(Judge):
         output_text = text[output_index + len("Sample Output"):].strip()
 
         # Save sample input and output
-        try:
-            path.mkdir()
-        except FileExistsError as e:
-            if(not force):
-                raise e
-
+        path = Path(self.path, "samples")
+        path.mkdir(exist_ok=force)
 
         with open(Path(path, "1.in"), "w") as file:
             file.write(input_text)
 
         with open(Path(path, "1.out"), "w") as file:
             file.write(output_text)         
+
+    def create_metadata(self):
+        super().create_metadata()
+        # We also want to save the problem id
+        path = Path(self.path, ".meta")
+        with open(path, "a") as file:
+            file.write(f"{self._problem_id}\n")

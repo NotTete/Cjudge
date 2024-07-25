@@ -36,14 +36,17 @@ class AerJudge(Judge):
     def name(self):
         return "aer"
 
-    def __init__(self, problem: str):
+    def __init__(self, problem: str, check: bool = True):
         # Problem number must be bigger than 100
         if len(problem) <= 2:
             raise InvalidProblemException(self.name, problem)
         
         folder = problem[:-2]
         self.pdf_url = f"https://aceptaelreto.com/pub/problems/v{folder.zfill(3)}/{problem[-2:]}/st/problem.pdf"
-        self.problem = problem
+        if(check):
+            self.problem = problem
+        else:
+            self._problem = problem
 
 
     def create_statement(self, path: Path):
