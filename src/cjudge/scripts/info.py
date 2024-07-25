@@ -1,6 +1,7 @@
 import argparse
 from pathlib import Path
 
+from ..problem import get_judge_from_file
 from ..error import InvalidJudgeException, InvalidProblemException
 from ..terminal_utils import display_error, Bar, Color
 
@@ -20,38 +21,15 @@ def cli_info():
     )
 
     parser.add_argument(
-        "-p", "--path",
+        "path",
         type=Path,
-        dest="path",
+        nargs="?",        
         default=Path("."),
         help="problem location"
     )
 
     args = parser.parse_args()
-    path: Path = args.path
+    path = args.path
 
-    # Check if the path exists
-    if(not path.is_dir()):
-        display_path = get_display_path(path)
-        display_error(f"'{display_path}' folder doesnt' exist")
-        exit()
-    
-    # Check if it is a valid problem path
-    path = Path(path, ".meta")
-    if(not path.is_file()):
-        display_path = get_display_path(path.parent)
-        display_error(f"'{display_path}' folder isn't a problem folder")
-        exit()
-
-    # Tries to create a problem validating it
-    try:
-        problem = Problem.load_from_file(path)
-    except InvalidJudgeException:
-        display_error("Invalid judge your metadata file might be corrupted")
-    except InvalidProblemException:
-        display_error("Invalid problem your metadata file might be corrupted")
-    except Exception as e:
-        display_error("An unexpected error has ocurred")
-        raise e
-    else:
-        problem.display_info()
+    judge = get_judge_from_file(path)
+    judge.display_info()

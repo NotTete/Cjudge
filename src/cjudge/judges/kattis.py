@@ -4,6 +4,7 @@ import requests
 import kattispdf
 import shutil
 
+from ..terminal_utils import *
 from ..error import InvalidProblemException
 from .judge import Judge
 
@@ -12,13 +13,8 @@ class KattisJudge(Judge):
     def url(self):
         return f"https://open.kattis.com/problems/{self._problem}"
 
-    @property
-    def name(self):
-        return "kattis"
-
-    @property
-    def fullname(self):
-        return "Kattis"
+    name = "kattis"
+    fullname = f"{bold}{rgb(Color("#ff9933"))}Kattis{clear}"
 
     def __init__(self, problem: str, path: Path):
         self.path = path

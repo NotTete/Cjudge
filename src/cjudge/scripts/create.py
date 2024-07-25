@@ -18,7 +18,8 @@ def cli_create():
     parser.add_argument(
         "judge",
         metavar="judge",
-        help="online judge from 'uva', 'aer', 'kattis' and 'none'",
+        nargs="?",
+        help="online judge from 'uva', 'aer', 'kattis'. If none leave empty",
     )
 
     parser.add_argument(
@@ -91,7 +92,7 @@ def cli_create():
         judge = get_judge(judge_name, problem, path)
 
         # Check if the judge was correct and warn the user
-        if(judge.name == "none" and judge_name != "none"):
+        if(judge.name == "none" and judge_name != None):
             loader.send_warning("Invalid judge creating an empty problem")
 
         # Create the problem folder

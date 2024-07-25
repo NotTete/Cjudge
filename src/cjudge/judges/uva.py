@@ -1,8 +1,10 @@
 from pathlib import Path
 from pypdf import PdfReader
+from bs4 import BeautifulSoup
 import requests
 import json
 
+from ..terminal_utils import *
 from .judge import Judge
 from ..error import InvalidProblemException
 
@@ -13,15 +15,10 @@ class UvaJudge(Judge):
     def url(self):
         return f"https://onlinejudge.org/index.php?option=com_onlinejudge&Itemid=8&page=show_problem&problem={self._problem_id}"
 
-    @property
-    def name(self):
-        return "uva"
+    name = "uva"
+    fullname = f"{bold}{rgb(Color("#ff3399"))}UvaJudge{clear}"
 
-    @property
-    def fullname(self):
-        return "UvaJudge"
-
-    def __init__(self, problem: str, path: Path):
+    def __init__(self, problem: str, path: Path, problem_id = None):
         self.path = path
         self.problem = problem
 
@@ -29,11 +26,15 @@ class UvaJudge(Judge):
         if len(problem) <= 2:
             raise InvalidProblemException(self.name, problem)
 
-        # Get problem_id for problem url
-        request = requests.get(f"https://uhunt.onlinejudge.org/api/p/num/{self._problem}")
-        request.raise_for_status()
-        data = json.loads(request.text)
-        self._problem_id = data.get("pid")
+
+        if(problem_id == None):
+            # Get problem_id for problem url
+            request = requests.get(f"https://uhunt.onlinejudge.org/api/p/num/{self._problem}")
+            request.raise_for_status()
+            data = json.loads(request.text)
+            self._problem_id = data.get("pid")
+        else:
+            self._problem_id = problem_id
 
         if(self._problem_id == None):
             raise InvalidProblemException(self.name, problem)
@@ -98,3 +99,42 @@ class UvaJudge(Judge):
         path = Path(self.path, ".meta")
         with open(path, "a") as file:
             file.write(f"{self._problem_id}\n")
+
+    def get_stadistics(self):
+        stadistics_url = self.url.replace("show_problem", "problem_stats").replace("&problem=", "&problemid=")
+        request = requests.get(stadistics_url)
+        request.raise_for_status()
+
+        parser = BeautifulSoup(request.text, "html.parser")
+        parser = parser.find("div", {"id": "col3_content_wrapper"})
+
+        title = parser.find("div", {"class":"componentheading"}).get_text()
+
+        data = parser.find_all("script", limit=4)[-1].get_text()
+        first_index = data.find("{")
+        second_index = first_index + data[first_index:].find("}") + 1
+        parse_data = lambda x: x.replace(")", "").replace("(","").split(" ")
+        submission_data = list(map(parse_data, json.loads(data[first_index:second_index].replace("'", '"')).keys()))
+        submission_data = {data[0]: int(data[1]) for data in submission_data}
+
+        user_data_tag = parser.find_all("table", limit=2)[-1].find_all("tr", limit=2)[-1].find_all("td")[1:]
+        user_data = {"AC": int(user_data_tag[1].get_text()), "WA": int(user_data_tag[0].get_text()) - int(user_data_tag[1].get_text())}
+
+        try:
+            submission_data["MLE"] = submission_data.pop("ML")
+        except KeyError:
+            pass
+
+        try:
+            submission_data["TLE"] = submission_data.pop("TL")
+        except KeyError:
+            pass
+        valid_keys = ["AC", "WA", "PE", "MLE", "CE", "TLE", "OT", "RTE"]
+        invalid_keys = list(filter(lambda x: not x in valid_keys, submission_data.keys()))
+        
+        if(len(invalid_keys) > 0):
+            submission_data["OT"] = 0
+            for key in invalid_keys:
+                submission_data["OT"] += submission_data.pop(key)
+
+        return title, user_data, submission_data

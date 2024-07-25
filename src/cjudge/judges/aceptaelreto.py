@@ -4,63 +4,45 @@ import requests
 
 from ..error import InvalidProblemException
 from .judge import Judge
+from ..terminal_utils import *
 
 class AerJudge(Judge):    
-    @property
-    def problem(self):
-        return self._problem
-
-    @problem.setter
-    def problem(self, problem: str):
-        """
-        Set the problem number after validating it
-
-        Args:
-            problem (str): Problem number
-        """
-
-        # We request the pdf of the problem to validate it is a valid problem
-        request = requests.get(self.pdf_url)
-        error_code = request.status_code
-
-        # If the requests isn't sucessful we raise an error
-        if(error_code != 200):
-            raise InvalidProblemException(self.name, problem)
-        self._problem = problem
-
+    
     @property
     def url(self):
         return f"https://aceptaelreto.com/problem/statement.php?id={self._problem}"
 
-    @property
-    def name(self):
-        return "aer"
+    name = "aer"
+    fullname = f"{bold}{rgb(Color("#99ccff"))}Acepta el Reto{clear}"
 
-    def __init__(self, problem: str, check: bool = True):
+    def __init__(self, problem: str, path: Path):
+        self.path = path
+        self.problem = problem
+
         # Problem number must be bigger than 100
         if len(problem) <= 2:
             raise InvalidProblemException(self.name, problem)
-        
-        folder = problem[:-2]
-        self.pdf_url = f"https://aceptaelreto.com/pub/problems/v{folder.zfill(3)}/{problem[-2:]}/st/problem.pdf"
-        if(check):
-            self.problem = problem
-        else:
-            self._problem = problem
 
-
-    def create_statement(self, path: Path):
+    def create_statement(self):
+        # Get url
+        folder = self.problem[:-2].zfill(3)
+        pdf_url = f"https://aceptaelreto.com/pub/problems/v{folder}/{self.problem[-2:]}/st/problem.pdf"
 
         # Download and save pdf directly from Acepta el Reto
-        request = requests.get(self.pdf_url, stream=True)
+        request = requests.get(pdf_url, stream=True)
         request.raise_for_status()
 
+        path = Path(self.path, f"{self.problem}.pdf")
         with open(path, "wb") as file:
             for chunk in request.iter_content(1024):
                 file.write(chunk)
     
-    def create_samples(self, path: Path, force: bool = False):
-        
+    def create_samples(self, force: bool = False, create_sample: bool = True):
+        # Check if the user want to create empty samples
+        if(not create_sample):
+            self.create_samples_empty(force)
+            return
+
         # Request problem html
         request = requests.get(self.url, stream=True)
         request.raise_for_status()
@@ -76,11 +58,8 @@ class AerJudge(Judge):
         output_text = output_tag.get_text()
 
         # Save sample input and output
-        try:
-            path.mkdir()
-        except FileExistsError as e:
-            if(not force):
-                raise e
+        path = Path(self.path, "samples")
+        path.mkdir(exist_ok=force)
         
         with open(Path(path, "1.in"), "w") as file:
             file.write(input_text)

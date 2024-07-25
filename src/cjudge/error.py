@@ -23,3 +23,8 @@ class InvalidProblemException(Exception):
         self.judge = judge
         self.problem = problem
         super().__init__(f"Problem '{problem}' from '{judge}' doesn't exist")
+
+class CorruptedMetafileError(Exception):
+    """
+    Exception raised when a metafile is not correct
+    """

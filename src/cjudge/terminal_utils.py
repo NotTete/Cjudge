@@ -127,7 +127,7 @@ class Bar:
     
     def display(self, show_legend: bool = True, columns = 100):
         # Offset due to the title
-        title_offset = len(f"{self.title}: ")
+        title_offset = len(f"{self.title} ")
         if(self.title != None):
             columns -= title_offset 
 
@@ -181,7 +181,7 @@ class Bar:
 
         # Show bar
         if(self.title != None):
-            print(f"{bold}{self.title}: {clear}", end="")    
+            print(f"{bold}{self.title} {clear}", end="")    
         print(bar)
         
         # Show legend

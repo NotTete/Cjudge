@@ -1,5 +1,7 @@
 from pathlib import Path
+
 from .judge import Judge
+from ..terminal_utils import *
 
 class NoneJudge(Judge):    
 
@@ -7,13 +9,9 @@ class NoneJudge(Judge):
     def url(self):
         return f"None"
 
-    @property
-    def name(self):
-        return "none"
-
-    @property
-    def fullname(self):
-        return "None"
+    name = "none"
+    fullname = f"{bold}{rgb(Color("#666699"))}None{clear}"
+    fullname = "None"
 
     def __init__(self, problem: str, path: Path):
         self.path = path
