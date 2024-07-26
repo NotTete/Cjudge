@@ -11,7 +11,6 @@ class NoneJudge(Judge):
 
     name = "none"
     fullname = f"{bold}{rgb(Color("#666699"))}None{clear}"
-    fullname = "None"
 
     def __init__(self, problem: str, path: Path):
         self.path = path
@@ -24,3 +23,6 @@ class NoneJudge(Judge):
     def create_samples(self, force: bool = False, create_sample: bool = True):
         # Create empty input and output
         self.create_samples_empty(force)
+
+    def get_stadistics(self):
+        return self.problem, None, None

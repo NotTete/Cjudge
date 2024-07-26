@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
+from requests import exceptions
 import shutil 
 
+from ..error import *
 from ..terminal_utils import *
 from ..config import Config
 
@@ -113,35 +115,43 @@ class Judge(ABC):
 
     def display_info(self):
         """Display info to stdout"""
-        title, user, submission = self.get_stadistics()
 
-        color_dict = {
-            'AC':'#55B369',
-            'WA':'#E84F67',
-            'TLE':'#F3B74D',
-            'MLE':'#75A9D4',
-            'CE':'#C45A9C',
-            'PE':'#FF9966',
-            'RTE':'#CC99FF',
-            'OT':'#000000'
-        }
-
-        submission_data = [(veredict, value, Color(color_dict[veredict])) for veredict, value in submission.items()]
-        submission_data = list(zip(*submission_data))
-        submission_bar = Bar(names=submission_data[0], values=submission_data[1], colors=submission_data[2], title="Submissions:")
-
-        user_data = [(veredict, value, Color(color_dict[veredict])) for veredict, value in user.items()]
-        user_data = list(zip(*user_data))
-        user_bar = Bar(names=user_data[0], values=user_data[1], colors=user_data[2], title="Users:      ")
+        loader = Loader("Getting problem information...", "", color=Color("#00ffff"))
+        loader.start()
+        try:
+            title, user, submission = self.get_stadistics()
+        finally:
+            loader.stop()
 
         print(f" {bold}{title}{clear} ".center(113, "┈"))
         print(f"{bold}Judge:{clear}   {self.fullname}")
         print(f"{bold}Problem:{clear} {self.problem}")
         print(f"{bold}URL:{clear}     {self.url}")
-        print(f" {bold}Stadistics{clear} ".center(113, "┈"))
-        user_bar.display(show_legend=False, columns=105)
-        print("")
-        submission_bar.display(show_legend=True, columns=105)
+
+        if(user != None and submission != None):
+            color_dict = {
+                'AC':'#55B369',
+                'WA':'#E84F67',
+                'TLE':'#F3B74D',
+                'MLE':'#75A9D4',
+                'CE':'#C45A9C',
+                'PE':'#FF9966',
+                'RTE':'#9972CC',
+                'OT':'#000000'
+            }
+
+            submission_data = [(veredict, value, Color(color_dict[veredict])) for veredict, value in submission.items()]
+            submission_data = list(zip(*submission_data))
+            submission_bar = Bar(names=submission_data[0], values=submission_data[1], colors=submission_data[2], title="Submissions:")
+
+            user_data = [(veredict, value, Color(color_dict[veredict])) for veredict, value in user.items()]
+            user_data = list(zip(*user_data))
+            user_bar = Bar(names=user_data[0], values=user_data[1], colors=user_data[2], title="Users:      ")
+
+            print(f" {bold}Statistics{clear} ".center(113, "┈"))
+            user_bar.display(show_legend=False, columns=105)
+            print("")
+            submission_bar.display(show_legend=True, columns=105)
 
 
     @abstractmethod

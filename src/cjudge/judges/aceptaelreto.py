@@ -1,6 +1,7 @@
 from pathlib import Path
 from bs4 import BeautifulSoup
 import requests
+import json
 
 from ..error import InvalidProblemException
 from .judge import Judge
@@ -13,7 +14,7 @@ class AerJudge(Judge):
         return f"https://aceptaelreto.com/problem/statement.php?id={self._problem}"
 
     name = "aer"
-    fullname = f"{bold}{rgb(Color("#99ccff"))}Acepta el Reto{clear}"
+    fullname = f"{bold}{rgb(Color("#99ccff"))}¡Acepta el Reto!{clear}"
 
     def __init__(self, problem: str, path: Path):
         self.path = path
@@ -45,7 +46,7 @@ class AerJudge(Judge):
 
         # Request problem html
         request = requests.get(self.url, stream=True)
-        request.raise_for_status()
+        self.check_if_valid(request)
         parser = BeautifulSoup(request.text, "html.parser")
 
         # Find input text
@@ -66,3 +67,63 @@ class AerJudge(Judge):
 
         with open(Path(path, "1.out"), "w") as file:
             file.write(output_text)    
+    
+    def check_if_valid(self, request):
+        request.raise_for_status()
+        parser = BeautifulSoup(request.text, "html.parser")
+        
+        button = parser.find("div", {"class": "alert alert-danger"})
+        if button != None:
+            button_text = button.get_text().strip()
+            if button_text.find("ERROR") != -1:
+                raise InvalidProblemException(self.name, self.problem)
+
+    def get_stadistics(self):
+        stadistics_url = self.url.replace("statement", "statistics")
+        request = requests.get(stadistics_url)
+        self.check_if_valid(request)
+
+        parser = BeautifulSoup(request.text, "html.parser")
+        parser = parser.find("div", {"class": "col-md-10"})
+
+        title = f"{self.problem} - {parser.find("h1").get_text()}"
+
+        user_data_tag = parser.find("table", {"class": "problemGlobalStatistics"}).find_all("tr", limit=2)[-1].find_all("td")[1:]
+        user_data = {"AC": int(user_data_tag[1].get_text()), "WA": int(user_data_tag[0].get_text()) - int(user_data_tag[1].get_text())}
+
+        submission_raw_text = parser.find("script").get_text()
+        look_index = submission_raw_text.find("];") + 2
+        submission_raw_text = submission_raw_text[look_index:]
+
+        first_index = submission_raw_text.find("[")
+        second_index = submission_raw_text.find("];") + 1
+
+        submission_raw_data = submission_raw_text[first_index:second_index]
+        submission_raw_data = submission_raw_data.replace("[", "").replace("]", "").replace("'", "").split(",")[2:]
+
+        labels_dic = {
+            "Accepted": "AC",
+            "Presentation Error": "PE",
+            "Wrong Answer": "WA",
+            "Time limit exceeded": "TLE",
+            "Memory limit exceeded": "MLE",
+            "Output limit exceeded": "OT",
+            "Restricted function": "OT",
+            "Run-time error": "RTE",
+            "Compilation error": "CE",
+            "Internal error": "OT",
+        }
+
+        submission_data = {}
+
+        for i in range(0, len(submission_raw_data), 2):
+            label = submission_raw_data[i].strip()
+            label = labels_dic[label]
+            value = int(submission_raw_data[i + 1])
+
+            if(submission_data.get(label) != None and value != 0):
+                submission_data[label] += value
+            elif (value != 0):
+                submission_data[label] = value
+
+        return title, user_data, submission_data

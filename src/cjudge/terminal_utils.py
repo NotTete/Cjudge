@@ -88,7 +88,10 @@ class Loader():
         print(f"\r{ " " * get_terminal_size((80, 20)).columns }", end="")
 
         if(error == None):
-            print(f"\r{self.end_description}")
+            if(self.end_description == ""):
+                print("\r", end="")
+            else:
+                print(f"\r{self.end_description}")
         else:
             print(f"\r", end="")
             display_error(error)
@@ -199,6 +202,5 @@ class Bar:
             print("\n" + " " * (title_offset + (columns - length) // 2), end="")
             # Print legend
             print(legend)
-            print("")
 
     

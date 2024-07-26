@@ -1,5 +1,6 @@
 from pathlib import Path
 import shutil
+import json
 
 class Config:
     """
@@ -9,6 +10,9 @@ class Config:
     config_folder = Path(Path.home(), ".cjudge")
     config_file = Path(config_folder, "config.json")
     template_file = Path(config_folder, "template.cpp")
+    package_config_folder = Path(Path(__file__).parent, "config")
+    package_config_file = Path(package_config_folder, "config.json")
+    package_template_file = Path(package_config_folder, "template.cpp")
 
     @staticmethod
     def create_config():
@@ -22,13 +26,8 @@ class Config:
         Config.config_folder.mkdir()
 
         # Move the corresponding files
-        package_config_folder = Path(Path(__file__).parent, "config")
-
-        package_template_file = Path(package_config_folder, "template.cpp")
-        shutil.copyfile(package_template_file, Config.template_file)
-
-        package_config_file = Path(package_config_folder, "config.json")
-        shutil.copyfile(package_config_file, Config.config_file)
+        shutil.copyfile(Config.package_template_file, Config.template_file)
+        shutil.copyfile(Config.package_config_file, Config.config_file)
 
     @staticmethod
     def repair_config():
@@ -44,12 +43,10 @@ class Config:
 
         # Check template and config file
         if(not Config.template_file.exists()):
-            package_template_file = Path(package_config_folder, "template.cpp")
-            shutil.copyfile(package_template_file, Config.template_file)
+            shutil.copyfile(Config.package_template_file, Config.template_file)
 
         if(not Config.config_file.exists()):
-            package_config_file = Path(package_config_folder, "config.json")
-            shutil.copyfile(package_config_file, Config.config_file)
+            shutil.copyfile(Config.package_config_file, Config.config_file)
         
 
     @staticmethod
@@ -63,3 +60,43 @@ class Config:
 
         Config.repair_config()
         shutil.copyfile(Config.template_file, path)
+
+    @staticmethod
+    def get_compiler():
+        """
+        Get the C++ compiler
+        """
+
+        Config.repair_config()
+        
+        # Try to get the compiler from the config json
+        config_json = None
+        try:
+            file = open(Config.config_file, "r")
+            config_json = json.load(file)
+        except json.decoder.JSONDecodeError:
+            shutil.copyfile(Config.package_config_file, Config.config_file)
+            config_json = json.load(file)
+        finally:
+            file.close()
+
+        compiler = config_json.get("compiler")
+        
+        if(compiler != None):
+            # If the value exist return
+            return compiler
+        else:
+            # Else get it from package
+            with open(Config.package_config_file, "r") as file:
+                package_config_json = json.load(file)
+
+            compiler = package_config_json.get("compiler")
+
+            # Save it on the config file
+            config_json["compiler"] = compiler
+            with open(Config.config_file, "w") as file:
+                json.dump(config_json, file, indent="\t")
+
+            return compiler
+    
+        

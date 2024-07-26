@@ -19,6 +19,7 @@ Homepage = "https://github.com/NotTete/cjudge"
 [project.scripts]
 cjudge-create = "cjudge:cli_create"
 cjudge-info = "cjudge:cli_info"
+cjudge-test = "cjudge:cli_test"
 
 [build-system]
 requires = ["hatchling"]
