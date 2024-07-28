@@ -54,8 +54,30 @@ def rgb_bg(color: Color) -> str:
 
 clear = "\33[0m"
 bold = "\33[1m"
+italic = "\33[3m"
+dim = "\33[2m"
 
-check = f"{rgb(Color("#88ff73"))}{bold}✓{clear}"
+cross = f"{rgb(Color("#E84F67"))}✘{clear}"
+check = f"{rgb(Color("#55B369"))}{bold}✓{clear}"
+
+color_dic = {
+    'AC':Color('#55B369'),
+    'WA':Color('#E84F67'),
+    'TLE':Color('#F3B74D'),
+    'MLE':Color('#75A9D4'),
+    'CE':Color('#C45A9C'),
+    'PE':Color('#FF9966'),
+    'RTE':Color('#9972CC'),
+    'OT':Color('#000000')
+}
+
+def print_line():
+    print(min(get_terminal_size().columns, 113) * "┈")
+
+def underline(msg: str, color: Color):
+    columns = get_terminal_size().columns
+    msg_length = len(msg)
+    print(f"{rgb_bg(color)}{msg}{" " * (columns - msg_length)}{clear}")
 
 def display_warning(msg: str, sameline: bool = False):
     """Display a warning msg"""
@@ -119,6 +141,10 @@ class Loader():
             index = (index + 1) % cycle_length
             last_description = self.description
             time.sleep(0.1)
+    
+    def __del__(self):
+        if(not self.done):
+            self.stop() 
         
 class Bar:
     def __init__(self, values, names, colors, title = None):

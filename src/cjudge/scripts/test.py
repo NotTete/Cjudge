@@ -1,30 +1,16 @@
 from pathlib import Path
-import subprocess
 import argparse
-import tempfile
 
-
-from ..terminal_utils import Loader, Color
+from ..tester import Tester
+from ..terminal_utils import *
+from ..error import *
 from ..config import Config
-
-def compile_source(temp_folder, problem_folder):
-    binary_path = Path(temp_folder, "main")
-    cpp_file = Path(problem_folder, "main.cpp")
-    compiler = Config.get_compiler()
-
-    if(not cpp_file.exists()):
-        raise FileNotFoundError("Couldn't find problem file")
-
-    sub = subprocess.run([compiler, "-o", binary_path, cpp_file]) 
-    sub.check_returncode()
-
-    return binary_path
 
 def cli_test():
     # Argument parser
     parser = argparse.ArgumentParser(
         prog="cjudge-test",
-        description="run problem test cases locally",
+        description="Run problem test cases from 'samples' folder",
     )
 
     parser.add_argument(
@@ -35,16 +21,57 @@ def cli_test():
         help="The problem folder"
     )
 
+    parser.add_argument(
+        "-o", "--output",
+        type=str,
+        metavar="choice",
+        dest="output",
+        choices=["minimal", "error", "full"],
+        default=None,
+        help="Information to be displayed. quiet: Only test results. error: Error outputs. full: All the outputs. (Default can be changed on config file)"
+    )
+
+    parser.add_argument(
+        "-i", "--interactive",
+        action="store_true",
+        dest="interactive",
+        default=False,
+        help="Run an interactive test case"
+    )
+
+    parser.add_argument(
+        "-nf", "--nofile",
+        action="store_false",
+        dest="create_files",
+        default=True,
+        help="Doesn't create result files"
+    )
+
     args = parser.parse_args()
+    output = args.output
+    interactive = args.interactive
+    create_files = args.create_files
     path = args.path
 
-    loader = Loader("Compiling program...", "", color=Color("#00FFFFF"))
-    loader.start()
-    with tempfile.TemporaryDirectory() as temp_folder:
-        source = compile_source(temp_folder, path)
+    if(output == None):
+        output = Config.get_test_output()
 
-        with open(Path(path, "1.res"), "w") as file:
-            with open(Path(path, "samples", "1.in"), "r") as sample:
-                sub = subprocess.run([source], stdin=sample, stdout=file) 
-        
-    loader.stop()
+    if(not path.exists()):
+        display_error("The selected path doesn't exists")
+        exit()
+
+    try:
+        tester = Tester(path, output, create_files)
+
+        if(interactive):
+            tester.run_interactive()
+        else:
+            tester.run_tests()
+
+    except CompilationError as e:
+        print(e)
+        display_error("Couldn't compile your program")
+    except FileNotFoundError as e:
+        display_error(f"Problem folder '{path}' is not valid")
+        display_warning("Check you have a 'samples' folder and a 'main.cpp' file")
+        raise e

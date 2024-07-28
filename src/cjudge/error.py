@@ -28,3 +28,8 @@ class CorruptedMetafileError(Exception):
     """
     Exception raised when a metafile is not correct
     """
+
+class CompilationError(Exception):
+    """
+    Exception raised when a compilation error ocurrs
+    """

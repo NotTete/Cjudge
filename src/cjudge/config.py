@@ -19,7 +19,6 @@ class Config:
         """
         Create config folder and deletes any other previous config
         """
-
         # Check if config exists and creates it
         if(Config.config_folder.exists):
             shutil.rmtree(Config.config_folder)
@@ -62,14 +61,7 @@ class Config:
         shutil.copyfile(Config.template_file, path)
 
     @staticmethod
-    def get_compiler():
-        """
-        Get the C++ compiler
-        """
-
-        Config.repair_config()
-        
-        # Try to get the compiler from the config json
+    def get_config_json():
         config_json = None
         try:
             file = open(Config.config_file, "r")
@@ -79,6 +71,30 @@ class Config:
             config_json = json.load(file)
         finally:
             file.close()
+        
+        return config_json
+
+    @staticmethod
+    def repair_config_parameter(config_json, parameter):
+            with open(Config.package_config_file, "r") as file:
+                package_config_json = json.load(file)
+
+            parameter_value = package_config_json.get(parameter)
+
+            config_json[parameter] = parameter_value
+            with open(Config.config_file, "w") as file:
+                json.dump(config_json, file, indent="\t")
+
+            return parameter_value
+
+    @staticmethod
+    def get_compiler():
+        """
+        Get the C++ compiler
+        """
+
+        Config.repair_config()
+        config_json = Config.get_config_json()
 
         compiler = config_json.get("compiler")
         
@@ -86,17 +102,22 @@ class Config:
             # If the value exist return
             return compiler
         else:
-            # Else get it from package
-            with open(Config.package_config_file, "r") as file:
-                package_config_json = json.load(file)
-
-            compiler = package_config_json.get("compiler")
-
-            # Save it on the config file
-            config_json["compiler"] = compiler
-            with open(Config.config_file, "w") as file:
-                json.dump(config_json, file, indent="\t")
-
+            compiler = Config.repair_config_parameter(config_json, "compiler")
             return compiler
     
-        
+    @staticmethod   
+    def get_test_output():        
+        """
+        Get the default test output mode
+        """
+
+        Config.repair_config()
+        config_json = Config.get_config_json()
+
+        output = config_json.get("test-output")
+        choices = ["minimal", "full", "error"]
+        if(output in choices):
+            return output
+        else:
+            output = Config.repair_config_parameter(config_json, "test-output")
+            return output

@@ -87,8 +87,6 @@ class Judge(ABC):
 
         with open(Path(path, "1.in"), "w") as file:
             pass
-        with open(Path(path, "1.out"), "w") as file:
-            pass
 
     def create_template(self):
         """
@@ -129,22 +127,11 @@ class Judge(ABC):
         print(f"{bold}URL:{clear}     {self.url}")
 
         if(user != None and submission != None):
-            color_dict = {
-                'AC':'#55B369',
-                'WA':'#E84F67',
-                'TLE':'#F3B74D',
-                'MLE':'#75A9D4',
-                'CE':'#C45A9C',
-                'PE':'#FF9966',
-                'RTE':'#9972CC',
-                'OT':'#000000'
-            }
-
-            submission_data = [(veredict, value, Color(color_dict[veredict])) for veredict, value in submission.items()]
+            submission_data = [(veredict, value, color_dic[veredict]) for veredict, value in submission.items()]
             submission_data = list(zip(*submission_data))
             submission_bar = Bar(names=submission_data[0], values=submission_data[1], colors=submission_data[2], title="Submissions:")
 
-            user_data = [(veredict, value, Color(color_dict[veredict])) for veredict, value in user.items()]
+            user_data = [(veredict, value, color_dic[veredict]) for veredict, value in user.items()]
             user_data = list(zip(*user_data))
             user_bar = Bar(names=user_data[0], values=user_data[1], colors=user_data[2], title="Users:      ")
 
