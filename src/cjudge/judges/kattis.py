@@ -5,10 +5,11 @@ import requests
 import kattispdf
 import shutil
 
-
 from ..terminal_utils import *
-from ..error import InvalidProblemException
+from ..error import *
+from ..config import Config
 from .judge import Judge
+
 
 class KattisJudge(Judge):
     @property
@@ -114,3 +115,97 @@ class KattisJudge(Judge):
 
 
         return title, user_data, submission_data
+
+    def login(self):
+        username = Config.get_kattis_name()
+        token = Config.get_kattis_token()
+
+        if(username == None or token == None):
+            raise Exception("Kattis logging information not be found check your config file")
+        
+        login_url = "https://open.kattis.com/login"
+        args = {
+            'user': username, 
+            'token': token,
+            'script': 'true'
+        }
+
+        loader = Loader("Logging in...", "", color=Color("#00FFFFF"))
+        loader.start()
+
+        self.session = requests.Session()
+        r = self.session.post(login_url, data=args)
+
+        loader.stop()
+
+        if(r.status_code != 200):
+            raise Exception("Kattis logging information is not valid check your config file")
+            
+    def get_result(self):
+        status = None
+        loading_status = ["Compiling", "New", "Running"]
+
+        loader = Loader("Getting result...", "", color=Color("#00FFFFF"))
+        loader.start()
+        while status == None or status in loading_status:
+            time.sleep(0.75)
+            r = self.session.get(self.result_url)
+            parser = BeautifulSoup(r.text, "html.parser")
+            status = parser.find("td", {"data-type": "status"}).get_text()
+        loader.stop()
+
+        time_result = parser.find("td", {"data-type": "cpu"}).get_text()
+        cases = parser.find("td", {"data-type": "testcases"}).get_text()
+
+        if status.find("Accepted") != -1:
+            color = rgb(color_dic["AC"])
+        else:
+            color = rgb(color_dic["WA"])
+
+        result_str = f"  {bold}{color}{status}{clear}"
+
+        if(time_result != ""):
+            result_str += f" {time_result}"
+        
+        if(cases != ""):
+            result_str += f" Cases: {bold}{cases}{clear}"
+
+        print_line()
+        print(f"{bold}Result in problem {self.problem}:{clear}")
+        print(result_str)
+
+    def submit(self):
+        self.login()
+
+        data = {
+            'submit': 'true',
+            'submit_ctr': 2,
+            'language': "C++",
+            'mainclass': "",
+            'problem': self.problem,
+            'tag': "",
+            'script': 'true'
+        }
+
+        files = []
+        with open(Path(self.path, "main.cpp"), 'rb') as file:
+            files.append((
+                'sub_file[]', (
+                    "main.cpp",
+                    file.read(),
+                    'application/octet-stream'
+                )
+            ))
+        
+        submit_url = "https://open.kattis.com/submit"
+        loader = Loader("Submitting problem...", "", color=Color("#00FFFFF"))
+        loader.start()
+        r = self.session.post(submit_url, data=data, files=files)
+        r.raise_for_status()
+        loader.stop()
+
+        if(r.text == "Problem not found"):
+            raise CorruptedMetafileError
+        
+        self.result_url = r.text[5 + r.text.find("URL: "):]
+        self.get_result()

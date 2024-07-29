@@ -1,4 +1,6 @@
 {
     "compiler": "g++",
-    "test-output": "full"
+    "test-output": "full",
+    "kattis-username": "Insert your name from the kattis config file",
+    "kattis-token": "Insert your token from the kattis config file"
 }

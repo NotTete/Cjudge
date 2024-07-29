@@ -75,11 +75,14 @@ class Config:
         return config_json
 
     @staticmethod
-    def repair_config_parameter(config_json, parameter):
-            with open(Config.package_config_file, "r") as file:
-                package_config_json = json.load(file)
+    def repair_config_parameter(config_json, parameter, new_value = None):
+            if new_value == None:
+                with open(Config.package_config_file, "r") as file:
+                    package_config_json = json.load(file)
 
-            parameter_value = package_config_json.get(parameter)
+                parameter_value = package_config_json.get(parameter)
+            else:
+                parameter_value = new_value
 
             config_json[parameter] = parameter_value
             with open(Config.config_file, "w") as file:
@@ -121,3 +124,35 @@ class Config:
         else:
             output = Config.repair_config_parameter(config_json, "test-output")
             return output
+
+    @staticmethod   
+    def get_kattis_name():        
+        """
+        Get the default test output mode
+        """
+
+        Config.repair_config()
+        config_json = Config.get_config_json()
+
+        output = config_json.get("kattis-username")
+        if(output != ""):
+            return output
+        else:
+            output = Config.repair_config_parameter(config_json, "kattis-username", "")
+            return None
+
+    @staticmethod   
+    def get_kattis_token():        
+        """
+        Get the default test output mode
+        """
+
+        Config.repair_config()
+        config_json = Config.get_config_json()
+
+        output = config_json.get("kattis-token")
+        if(output != ""):
+            return output
+        else:
+            output = Config.repair_config_parameter(config_json, "kattis-token", "")
+            return None
