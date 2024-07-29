@@ -121,7 +121,7 @@ class Judge(ABC):
         finally:
             loader.stop()
 
-        print(f" {bold}{title}{clear} ".center(113, "┈"))
+        print(f" {bold}{title}{clear} ".center(113, "─"))
         print(f"{bold}Judge:{clear}   {self.fullname}")
         print(f"{bold}Problem:{clear} {self.problem}")
         print(f"{bold}URL:{clear}     {self.url}")
