@@ -47,6 +47,7 @@ cjudge-submit problem-folder
 > [!WARNING]
 > In Kattis the login uses a token you can get from kattis website. [Get more information](https://github.com/NotTete/Cjudge/wiki/Kattis#kattis-login)
 
+## Configuration
+You can configure `cjudge` in the following folder `$HOME/.cjudge`. [Get more information](https://github.com/NotTete/Cjudge/wiki/Configuration)
 
-
-
+## [For further information visit the wiki](https://github.com/NotTete/Cjudge/wiki)
