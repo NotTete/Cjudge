@@ -13,7 +13,8 @@ To install Cjudge just use `pip`:
 ```
 pip install cjudge
 ```
-__Note:__ If you want to download Kattis problem statements from kattis you must need `latexmk`.  [Get more information](https://github.com/NotTete/kattispdf/tree/main)
+> [!WARNING]
+> If you want to download Kattis problem statements from kattis you must need `latexmk`.  [Get more information](https://github.com/NotTete/Cjudge/wiki/Kattis#kattis-problem-statement)
 
 ## Commands
 ### cjudge-create
@@ -40,9 +41,11 @@ Given a problem folder it submits your problem solution to the corresponding jud
 ```
 cjudge-submit problem-folder
 ```
-__Note 1:__ It will require you to introduce login credentials every time you login. 
+> [!IMPORTANT]
+> It will require you to introduce login credentials every time you login. 
 
-__Note 2:__ In Kattis the login uses a token you can get from kattis website. [Get more information]()
+> [!WARNING]
+> In Kattis the login uses a token you can get from kattis website. [Get more information](https://github.com/NotTete/Cjudge/wiki/Kattis#kattis-login)
 
 
 
