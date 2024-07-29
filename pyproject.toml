@@ -1,13 +1,13 @@
 [project]
 name = "cjudge"
-version = "0.0.1"
+version = "1.0.0"
 authors = [
   { name="Jorge Hdez", email="jorgehdezplp@proton.me" },
 ]
 description = "CLI utility for different online judges."
 readme = "README.md"
 requires-python = ">=3.8"
-dependencies = ["kattispdf", "requests"]
+dependencies = ["kattispdf", "requests", "bs4"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
