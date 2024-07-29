@@ -49,7 +49,7 @@ def cli_info():
         else:
             judge = get_judge(path, problem, None)
             if(judge.name == NoneJudge.name):
-                raise InvalidJudgeException(path)
+                raise InvalidJudgeException(judge)
 
         judge.display_info()
     except InvalidProblemException as e: 

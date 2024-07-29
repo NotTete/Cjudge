@@ -26,3 +26,12 @@ class NoneJudge(Judge):
 
     def get_stadistics(self):
         return self.problem, None, None
+
+    def login(self):
+        raise NotImplemented
+    
+    def get_result(self):
+        raise NotImplemented
+
+    def submit(self):
+        raise NotImplemented

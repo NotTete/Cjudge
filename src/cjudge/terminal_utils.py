@@ -64,11 +64,27 @@ color_dic = {
     'AC':Color('#55B369'),
     'WA':Color('#E84F67'),
     'TLE':Color('#F3B74D'),
+    'TL':Color('#F3B74D'),
     'MLE':Color('#75A9D4'),
+    'ML':Color('#75A9D4'),
     'CE':Color('#C45A9C'),
     'PE':Color('#FF9966'),
     'RTE':Color('#9972CC'),
     'OT':Color('#000000')
+}
+
+veredict_dict = {
+    "AC": "Accepted",
+    "WA": "Wrong Answer",
+    "TLE": "Time limit Exceeded",
+    "MLE": "Memory limit Exceeded",
+    "CE": "Compile Error",
+    "PE": "Presentation Error",
+    "RTE": "Run-Time Error",
+    "OT": "Other",
+    "TL": "Time limit Exceeded",
+    "MLE": "Memory limit Exceeded"
+
 }
 
 def print_line():

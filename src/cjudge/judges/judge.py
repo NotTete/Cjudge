@@ -147,3 +147,24 @@ class Judge(ABC):
         Gets problem stadistics and return them
         """
         raise NotImplementedError
+
+    @abstractmethod
+    def login(self):
+        """
+        Returns a logged session to the judge
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_result(self):
+        """
+        Get result from a problem submission
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def submit(self):
+        """
+        Submit problem to the judge
+        """
+        raise NotImplementedError

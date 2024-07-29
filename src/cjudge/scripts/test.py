@@ -62,11 +62,7 @@ def cli_test():
 
     try:
         tester = Tester(path, output, create_files)
-
-        if(interactive):
-            tester.run_interactive()
-        else:
-            tester.run_tests()
+        tester.run_tests()
 
     except CompilationError as e:
         print(e)
@@ -74,4 +70,3 @@ def cli_test():
     except FileNotFoundError as e:
         display_error(f"Problem folder '{path}' is not valid")
         display_warning("Check you have a 'samples' folder and a 'main.cpp' file")
-        raise e

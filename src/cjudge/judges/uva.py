@@ -4,8 +4,10 @@ from bs4 import BeautifulSoup
 from getpass import getpass
 import requests
 import json
+import time
 
 from ..terminal_utils import *
+from ..error import *
 from .judge import Judge
 from ..error import InvalidProblemException
 
@@ -139,3 +141,116 @@ class UvaJudge(Judge):
                 submission_data["OT"] += submission_data.pop(key)
 
         return title, user_data, submission_data
+
+    def validate_problem(self):
+        url = f"https://uhunt.onlinejudge.org/api/p/num/{self.problem}"
+        r = requests.get(url)
+        r.raise_for_status()
+        
+        if(r.text == "{}"):
+            raise CorruptedMetafileError
+
+    def login(self):
+        self.session = requests.Session()
+        post_data = {}
+
+        login_page = self.session.get('https://onlinejudge.org/')
+        login_page.raise_for_status()
+        soup = BeautifulSoup(login_page.text, "html.parser")
+
+        try:
+            form = soup.find('form', attrs={'id': 'mod_loginform'})
+            inputs = form.find_all('input')
+        except Exception:
+            return None
+        for i in inputs:
+            if i.has_attr('value'):
+                post_data[i['name'].encode('ascii','ignore')] = i['value'].encode('ascii','ignore')
+
+        logged = False
+        print(f"{bold}Logging in {self.fullname}{clear}")
+        print_line()
+        for i in range(3):
+            user = input("User: ")
+            pwd = getpass("Password: ")
+
+            post_data[b"username"] = user.encode("UTF-8")
+            post_data[b"passwd"] = pwd.encode("UTF-8")
+            post_data[b'remember'] = b'no'
+            login_url = form.attrs["action"]
+
+            loader = Loader("Logging in...", "", color=Color("#00FFFFF"))
+            loader.start()
+            r = self.session.post(login_url, data=post_data)
+            r.raise_for_status()
+
+            if(r.text.find("Incorrect username or password. Please try again.") == -1):
+                loader.stop()
+                logged = True
+                break
+            
+            if(i != 2):
+                loader.stop("Incorrect username or password. Please try again")
+            else:
+                loader.stop("Couldn't log in")
+
+
+        return logged
+    
+    def get_result(self):
+        entries = None
+
+        loader = Loader("Getting result...", "", color=Color("#00FFFFF"))
+        loader.start()
+        while entries == None or entries[3].get_text() == "In judge queue":
+            time.sleep(0.25)
+            r = self.session.get("https://onlinejudge.org/index.php?option=com_onlinejudge&Itemid=9")
+            r.raise_for_status()
+            parser = BeautifulSoup(r.text, "html.parser")
+            entry = parser.find("tr", {"class": "sectiontableentry1"})
+            entries = entry.find_all("td")
+        
+        loader.stop()
+
+        result = entries[3].get_text()
+        if result == "Accepted":
+            color = rgb(color_dic["AC"])
+        else:
+            color = rgb(color_dic["WA"])
+
+        time_result = entries[5].get_text()
+
+        print_line()
+        print(f"{bold}Result in problem {self.problem}:{clear}")
+        print(f"  {bold}{color}{result}{clear} {time_result} secs")
+
+    def submit(self):
+        file_path = Path(self.path, "main.cpp")
+
+        if(not file_path.is_file()):
+            raise FileNotFoundError
+        
+        with open(file_path, "r") as file:
+            src_code = file.read()
+
+        self.validate_problem()
+        if(not self.login()):
+            return
+
+        url = "https://onlinejudge.org/index.php?option=com_onlinejudge&Itemid=25&page=save_submission"
+
+        data = {
+            'problemid':	'',
+            'category':		'',
+            'localid':		self.problem,
+            'language':		5,
+            'code':			src_code
+        }
+
+        loader = Loader("Submitting problem...", "", color=Color("#00FFFFF"))
+        loader.start()
+        r = self.session.post(url, data=data)
+        r.raise_for_status()
+        loader.stop()
+
+        self.get_result()

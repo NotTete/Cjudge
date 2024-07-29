@@ -1,9 +1,10 @@
 from pathlib import Path
 from bs4 import BeautifulSoup
+from getpass import getpass
 import requests
 import json
 
-from ..error import InvalidProblemException
+from ..error import *
 from .judge import Judge
 from ..terminal_utils import *
 
@@ -127,3 +128,109 @@ class AerJudge(Judge):
                 submission_data[label] = value
 
         return title, user_data, submission_data
+
+    def login(self):
+        self.session = requests.Session()
+        post_data = {"commit": "Entrar", "loginForm_currentPage": "/"}
+
+        logged = False
+        print(f"{bold}Logging in {self.fullname}{clear}")
+        print_line()
+        for i in range(3):
+            user = input("User: ")
+            pwd = getpass("Password: ")
+
+            post_data[b"loginForm_username"] = user.encode("UTF-8")
+            post_data[b"loginForm_password"] = pwd.encode("UTF-8")
+            login_url = "https://aceptaelreto.com/bin/login.php"
+
+            loader = Loader("Logging in...", "", color=Color("#00FFFFF"))
+            loader.start()
+            r = self.session.post(login_url, data=post_data)
+            r.raise_for_status()
+
+            if(r.text.find("<strong>ERROR: </strong>") == -1):
+                loader.stop()
+                logged = True
+                break
+            
+            if(i != 2):
+                loader.stop("Incorrect username or password. Please try again")
+            else:
+                loader.stop("Couldn't log in")
+
+
+        return logged
+    
+    def get_result(self):
+        submission = None
+
+        loader = Loader("Getting result...", "", color=Color("#00FFFFF"))
+        loader.start()
+        while submission == None or submission["result"] == "IQ":
+            time.sleep(0.25)
+            r = self.session.get("https://aceptaelreto.com/ws/user/30966/submissions")
+            r.raise_for_status()
+            data = json.loads(r.text)
+            submission = data["submission"][0]
+
+
+        loader.stop()
+
+        result = submission["result"]
+        time_result = submission.get("executionTime")
+        memory = submission.get("memoryUsed")
+        ranking = submission.get("ranking")
+
+        color = rgb(color_dic.get(result, color_dic["OT"]))
+        result = veredict_dict.get(result, result)
+        result_str = f"  {bold}{color}{result}{clear}"
+
+        if(time_result != None):
+            result_str += f" {time_result} secs"
+        
+        if(memory != None):
+            result_str += f" {memory} KiB"
+        
+        if(ranking != None):
+            result_str += f" {bold}#{ranking}{clear}"
+
+        print_line()
+        print(f"{bold}Result in problem {self.problem}:{clear}")
+        print(result_str)
+
+    def submit(self):
+        file_path = Path(self.path, "main.cpp")
+
+        if(not file_path.is_file()):
+            raise FileNotFoundError
+        
+        with open(file_path, "r") as file:
+            src_code = file.read()
+
+        if(not self.login()):
+            return
+
+        url = f"https://aceptaelreto.com/bin/submitproblem.php"
+
+        data = {
+            "currentPage": (None, "/"),
+            "cat": (None, -1),
+            "id": (None, self.problem),
+            "language": (None, "CPP"),
+            "comment": (None, ""),
+            "inputFile": ("", ""),
+            "sentCode": (None, "inlineSentCode"),
+            "immediateCode": (None, src_code),
+        }
+
+        loader = Loader("Submitting problem...", "", color=Color("#00FFFFF"))
+        loader.start()
+        r = self.session.post(url, files=data)
+        r.raise_for_status()
+        loader.stop()
+
+        if(r.text.find("El problema no existe") != -1):
+            raise CorruptedMetafileError
+
+        self.get_result()
