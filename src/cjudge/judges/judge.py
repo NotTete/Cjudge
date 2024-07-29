@@ -135,7 +135,7 @@ class Judge(ABC):
             user_data = list(zip(*user_data))
             user_bar = Bar(names=user_data[0], values=user_data[1], colors=user_data[2], title="Users:      ")
 
-            print(f" {bold}Statistics{clear} ".center(113, "┈"))
+            print(f" {bold}Statistics{clear} ".center(113, "─"))
             user_bar.display(show_legend=False, columns=105)
             print("")
             submission_bar.display(show_legend=True, columns=105)

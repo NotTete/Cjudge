@@ -88,7 +88,7 @@ veredict_dict = {
 }
 
 def print_line():
-    print(min(get_terminal_size().columns, 113) * "┈")
+    print(min(get_terminal_size().columns, 113) * "─")
 
 def underline(msg: str, color: Color):
     columns = get_terminal_size().columns
